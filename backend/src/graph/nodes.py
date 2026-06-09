@@ -7,27 +7,149 @@ from src.agents.file_agent.executor import file_agent_executor
 def planner_node(state: AgentState) -> AgentState:
 
     prompt = f"""
-You are an OS Assistant Planner.
+You are an AI OS Assistant Planner.
 
-Convert user requests into JSON.
+Your job is to convert a user request into a structured execution plan.
 
-Allowed agents:
+IMPORTANT RULES:
 
-file_agent
-terminal_agent
-document_agent
-memory_agent
+1. Return ONLY valid JSON.
+2. Do NOT return markdown.
+3. Do NOT use ```json blocks.
+4. Do NOT explain anything.
+5. Do NOT add extra text.
+6. Return exactly one JSON object.
 
-Return ONLY JSON.
+AVAILABLE AGENTS:
 
-Example:
+1. file_agent
+2. terminal_agent
+3. document_agent
+4. memory_agent
+
+FILE AGENT ACTIONS:
+
+- create_folder
+- list_files
+- write_file
+- read_file
+- delete_file
+- search_files
+
+SCHEMA:
 
 {{
-    "agent":"file_agent",
-    "action":"create_folder",
+    "agent": "<agent_name>",
+    "action": "<action_name>",
+    "parameters": {{}}
+}}
+
+EXAMPLES
+
+User: Create folder Reports
+
+{{
+    "agent": "file_agent",
+    "action": "create_folder",
     "parameters": {{
-        "folder_name":"reports"
+        "folder_name": "Reports"
     }}
+}}
+
+User: Create a folder called invoices
+
+{{
+    "agent": "file_agent",
+    "action": "create_folder",
+    "parameters": {{
+        "folder_name": "invoices"
+    }}
+}}
+
+User: Show all files
+
+{{
+    "agent": "file_agent",
+    "action": "list_files",
+    "parameters": {{}}
+}}
+
+User: List files in workspace
+
+{{
+    "agent": "file_agent",
+    "action": "list_files",
+    "parameters": {{}}
+}}
+
+User: Create a file notes.txt with content Hello World
+
+{{
+    "agent": "file_agent",
+    "action": "write_file",
+    "parameters": {{
+        "filename": "notes.txt",
+        "content": "Hello World"
+    }}
+}}
+
+User: Write 'My first note' into notes.txt
+
+{{
+    "agent": "file_agent",
+    "action": "write_file",
+    "parameters": {{
+        "filename": "notes.txt",
+        "content": "My first note"
+    }}
+}}
+
+User: Read notes.txt
+
+{{
+    "agent": "file_agent",
+    "action": "read_file",
+    "parameters": {{
+        "filename": "notes.txt"
+    }}
+}}
+
+User: Open and read resume.pdf
+
+{{
+    "agent": "document_agent",
+    "action": "read_document",
+    "parameters": {{
+        "filename": "resume.pdf"
+    }}
+}}
+
+User: Remember my project folder is projects/resume-app
+
+{{
+    "agent": "memory_agent",
+    "action": "store_memory",
+    "parameters": {{
+        "memory": "My project folder is projects/resume-app"
+    }}
+}}
+
+User: Run git status
+
+{{
+    "agent": "terminal_agent",
+    "action": "run_command",
+    "parameters": {{
+        "command": "git status"
+    }}
+}}
+
+If the request cannot be mapped to an available action, return:
+
+{{
+    "agent": "unknown",
+    "action": "unknown",
+    "parameters": {{}}
 }}
 
 User Request:
