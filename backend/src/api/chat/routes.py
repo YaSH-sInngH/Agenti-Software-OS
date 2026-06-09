@@ -18,6 +18,7 @@ def chat(
             "user_id": current_user.id,
             "message": payload.message,
             "plan": None,
+            "result": {},
             "response": "",
         }
     )

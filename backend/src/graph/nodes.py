@@ -1,8 +1,11 @@
 import json
+import re
 from src.graph.state import AgentState
 from src.llm.claude import llm
+from src.agents.file_agent.executor import file_agent_executor
 
 def planner_node(state: AgentState) -> AgentState:
+
     prompt = f"""
 You are an OS Assistant Planner.
 
@@ -34,11 +37,29 @@ User Request:
 
     result = llm.invoke(prompt)
 
+    print("LLM Result:========", result.content)
+
     content = result.content
 
     try:
-        plan = json.loads(content)
-    except Exception:
+
+        json_match = re.search(
+            r"\{.*\}",
+            content,
+            re.DOTALL
+        )
+
+        if not json_match:
+            raise ValueError("No JSON found")
+
+        plan = json.loads(
+            json_match.group()
+        )
+
+    except Exception as e:
+
+        print("Planner Parse Error:", e)
+
         plan = {
             "agent": "unknown",
             "action": "unknown",
@@ -50,8 +71,20 @@ User Request:
     return state
 
 def router_nodes(state: AgentState):
+
+    plan = state["plan"]
+    agent = plan.get("agent")
+    if agent == "file_agent":
+        result = file_agent_executor(
+            plan
+        )
+        state["result"] = result
+        state["response"] = (
+            f"Executed file agent"
+        )
+        return state
+
     state["response"] = (
-        f"Planner selected: "
-        f"{state["plan"]}"
+        "Unknown agent"
     )
     return state
