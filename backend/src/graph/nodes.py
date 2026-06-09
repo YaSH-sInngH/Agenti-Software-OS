@@ -3,6 +3,7 @@ import re
 from src.graph.state import AgentState
 from src.llm.claude import llm
 from src.agents.file_agent.executor import file_agent_executor
+from src.agents.registry import AGENT_REGISTRY
 
 def planner_node(state: AgentState) -> AgentState:
 
@@ -195,18 +196,20 @@ User Request:
 def router_nodes(state: AgentState):
 
     plan = state["plan"]
-    agent = plan.get("agent")
-    if agent == "file_agent":
-        result = file_agent_executor(
-            plan
-        )
-        state["result"] = result
-        state["response"] = (
-            f"Executed file agent"
-        )
+    agent_name = plan.get("agent")
+    executor = AGENT_REGISTRY.get(
+        agent_name
+    )
+    if not executor:
+        state["result"] = {
+            "success": False,
+            "message": f"Unknown agent: {agent_name}"
+        }
+        state["response"] = "Unknown agent"
         return state
-
+    result = executor(plan)
+    state["result"] = result
     state["response"] = (
-        "Unknown agent"
+        f"Executed {agent_name}"
     )
     return state
