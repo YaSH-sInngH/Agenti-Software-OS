@@ -4,6 +4,7 @@ from src.db.database import Base
 from src.db.database import engine
 from src.db import models
 from src.api.auth.routes import router as auth_router
+from src.api.chat.routes import router as chat_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,3 +20,4 @@ def health_check():
     }
 
 app.include_router(auth_router)
+app.include_router(chat_router)

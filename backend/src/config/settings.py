@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     PINECONE_API_KEY: str
     PINECONE_INDEX: str
     WORKSPACE_DIR: str
+    ANTHROPIC_API_KEY: str
+    MODEL_NAME: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

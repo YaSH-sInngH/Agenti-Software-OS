@@ -21,7 +21,7 @@ credentials: HTTPAuthorizationCredentials = Depends(
             detail="Invalid token",
         )
 
-    user_id = payload.get("user_d")
+    user_id = payload.get("user_id")
 
     user = (
         db.query(User)
