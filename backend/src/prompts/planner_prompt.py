@@ -21,6 +21,7 @@ AVAILABLE AGENTS
 2. terminal_agent
 3. document_agent
 4. memory_agent
+5. knowledge_agent
 
 JSON SCHEMA
 
@@ -66,6 +67,13 @@ Memory types:
 - user_memory
 - project_memory
 - workspace_memory
+
+==================================================
+KNOWLEDGE AGENT ACTIONS
+==================================================
+
+- index_document
+- ask_document
 
 ==================================================
 EXAMPLES
@@ -208,6 +216,63 @@ User: Summarize resume.pdf
     "action": "summarize_document",
     "parameters": {
         "file_path": "resume.pdf"
+    }
+}
+
+==================================================
+KNOWLEDGE AGENT EXAMPLES
+==================================================
+
+User: Index notes.txt
+
+{
+    "agent": "knowledge_agent",
+    "action": "index_document",
+    "parameters": {
+        "file_path": "notes.txt"
+    }
+}
+
+User: Index resume.pdf
+
+{
+    "agent": "knowledge_agent",
+    "action": "index_document",
+    "parameters": {
+        "file_path": "resume.pdf"
+    }
+}
+
+User: What is notes.txt about?
+
+{
+    "agent": "knowledge_agent",
+    "action": "ask_document",
+    "parameters": {
+        "file_path": "notes.txt",
+        "question": "What is notes.txt about?"
+    }
+}
+
+User: What skills are mentioned in resume.pdf?
+
+{
+    "agent": "knowledge_agent",
+    "action": "ask_document",
+    "parameters": {
+        "file_path": "resume.pdf",
+        "question": "What skills are mentioned in resume.pdf?"
+    }
+}
+
+User: Summarize knowledge from resume.pdf
+
+{
+    "agent": "knowledge_agent",
+    "action": "ask_document",
+    "parameters": {
+        "file_path": "resume.pdf",
+        "question": "Summarize knowledge from resume.pdf"
     }
 }
 
