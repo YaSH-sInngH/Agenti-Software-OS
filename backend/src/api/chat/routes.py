@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from src.schemas.chat import ChatRequest
+from src.core.schemas.chat import ChatRequest
 from src.graph.workflow import graph
 from src.auth.dependencies import get_current_user
 

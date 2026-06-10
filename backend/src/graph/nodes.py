@@ -2,7 +2,7 @@ import json
 import re
 from datetime import date
 from src.graph.state import AgentState
-from src.llm.claude import llm
+from src.core.llm.claude import llm
 from src.agents.file_agent.executor import file_agent_executor
 from src.agents.registry import AGENT_REGISTRY
 from src.agents.response_agent.executor import response_agent_executor
@@ -61,6 +61,63 @@ User Request:
 
     return state
 
+USER_SCOPED_AGENTS = (
+    "memory_agent",
+    "knowledge_agent",
+    "task_agent",
+    "indexer_agent",
+    "reminder_agent",
+)
+
+PLACEHOLDER = re.compile(
+    r"\{\{\s*step(\d+)(?:\.([\w\.]+))?\s*\}\}"
+)
+
+def resolve_placeholders(value, results):
+
+    # Orchestrator: replace {{stepN}} / {{stepN.field.subfield}} in a step's
+    # parameters with the corresponding value produced by an earlier step.
+
+    if isinstance(value, dict):
+        return {
+            k: resolve_placeholders(v, results)
+            for k, v in value.items()
+        }
+
+    if isinstance(value, list):
+        return [
+            resolve_placeholders(v, results)
+            for v in value
+        ]
+
+    if not isinstance(value, str):
+        return value
+
+    def replace(match):
+
+        index = int(match.group(1))
+        path = match.group(2)
+
+        if index >= len(results):
+            return match.group(0)
+
+        data = results[index].get("result")
+
+        if path:
+            for key in path.split("."):
+                if isinstance(data, dict):
+                    data = data.get(key)
+                else:
+                    data = None
+                    break
+
+        if isinstance(data, str):
+            return data
+
+        return json.dumps(data, default=str)
+
+    return PLACEHOLDER.sub(replace, value)
+
 def router_nodes(state: AgentState):
 
     steps = state.get("steps", [])
@@ -73,6 +130,13 @@ def router_nodes(state: AgentState):
         agent_name = step.get("agent")
         executor = AGENT_REGISTRY.get(agent_name)
 
+        # Feed earlier step outputs into this step's parameters.
+        resolved_step = dict(step)
+        resolved_step["parameters"] = resolve_placeholders(
+            step.get("parameters", {}),
+            results,
+        )
+
         if not executor:
             results.append({
                 "agent": agent_name,
@@ -84,10 +148,10 @@ def router_nodes(state: AgentState):
             })
             continue
 
-        if agent_name in ("memory_agent", "knowledge_agent", "task_agent"):
-            result = executor(step, user_id)
+        if agent_name in USER_SCOPED_AGENTS:
+            result = executor(resolved_step, user_id)
         else:
-            result = executor(step)
+            result = executor(resolved_step)
 
         results.append({
             "agent": agent_name,

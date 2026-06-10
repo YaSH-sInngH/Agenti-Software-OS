@@ -1,5 +1,5 @@
 import cohere
-from src.config.settings import settings
+from src.core.config.settings import settings
 
 co = cohere.ClientV2(
     api_key=settings.COHERE_API_KEY

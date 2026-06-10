@@ -1,4 +1,4 @@
-from src.tools.terminal import run_command
+from src.agents.terminal_agent.tools import run_command
 
 def terminal_agent_executor(plan: dict):
     action = plan.get("action")

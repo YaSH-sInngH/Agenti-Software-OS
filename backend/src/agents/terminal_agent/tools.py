@@ -1,6 +1,6 @@
 import subprocess
 from src.agents.terminal_agent.constants import ALLOWED_COMMANDS, BLOCKED_KEYWORDS
-from src.config.settings import settings
+from src.core.config.settings import settings
 
 def run_command(command: str):
     command_parts = command.strip().split()

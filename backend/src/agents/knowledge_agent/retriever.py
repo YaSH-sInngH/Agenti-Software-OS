@@ -1,5 +1,5 @@
-from src.vectorstore.embeddings import generate_embedding
-from src.vectorstore.pinecone_client import index
+from src.core.vectorstore.embeddings import generate_embedding
+from src.core.vectorstore.pinecone_client import index
 
 
 def retrieve_chunks(

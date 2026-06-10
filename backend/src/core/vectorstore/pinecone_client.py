@@ -1,5 +1,5 @@
 from pinecone import Pinecone
-from src.config.settings import settings
+from src.core.config.settings import settings
 
 pc = Pinecone (
     api_key=settings.PINECONE_API_KEY

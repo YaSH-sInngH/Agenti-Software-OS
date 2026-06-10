@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from src.config.settings import settings
-from src.db.database import Base
-from src.db.database import engine
-from src.db import models
+from src.core.config.settings import settings
+from src.core.db.database import Base
+from src.core.db.database import engine
+from src.core.db import models
 from src.api.auth.routes import router as auth_router
 from src.api.chat.routes import router as chat_router
 

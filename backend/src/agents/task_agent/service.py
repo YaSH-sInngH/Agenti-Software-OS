@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from src.db.database import SessionLocal
-from src.db.models import Task
+from src.core.db.database import SessionLocal
+from src.core.db.models import Task
 
 
 def parse_due_date(value):

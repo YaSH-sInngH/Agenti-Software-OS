@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.db.database import get_db
+from src.core.db.database import get_db
 
-from src.schemas.auth import SignupRequest, LoginRequest, AuthResponse
+from src.core.schemas.auth import SignupRequest, LoginRequest, AuthResponse
 
 from src.auth.user_service import (
     get_user_by_email,

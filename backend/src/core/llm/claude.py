@@ -1,5 +1,5 @@
 from langchain_anthropic import ChatAnthropic
-from src.config.settings import settings
+from src.core.config.settings import settings
 
 llm = ChatAnthropic(
     model=settings.MODEL_NAME,

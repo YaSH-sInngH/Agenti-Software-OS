@@ -1,6 +1,6 @@
 import json
 
-from src.llm.claude import llm
+from src.core.llm.claude import llm
 from src.prompts.response_agent_prompt import (
     RESPONSE_AGENT_PROMPT
 )

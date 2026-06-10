@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.db.models import User
+from src.core.db.models import User
 
 def get_user_by_email(db: Session, email: str):
     return (

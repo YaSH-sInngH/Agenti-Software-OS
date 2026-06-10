@@ -24,6 +24,11 @@ AVAILABLE AGENTS
 5. knowledge_agent
 6. task_agent
 7. browser_agent
+8. indexer_agent
+9. reminder_agent
+10. report_agent
+11. resume_agent
+12. codebase_agent
 
 JSON SCHEMA
 
@@ -47,6 +52,21 @@ The steps run in order, one after another:
 
 Only use steps when the request clearly requires multiple actions.
 Use a single object for a single action.
+
+PASSING DATA BETWEEN STEPS (orchestration):
+
+A later step can use the output of an earlier step with a placeholder.
+Steps are numbered from 0. Reference a field of an earlier step's result
+with {{stepN.field}} (or {{stepN}} for the whole result).
+
+Example: save a web search into a file:
+
+{
+    "steps": [
+        { "agent": "browser_agent", "action": "web_search", "parameters": { "query": "Python jobs" } },
+        { "agent": "file_agent", "action": "write_file", "parameters": { "filename": "jobs.txt", "content": "{{step0.results}}" } }
+    ]
+}
 
 ==================================================
 FILE AGENT ACTIONS
@@ -84,6 +104,56 @@ Memory types:
 - user_memory
 - project_memory
 - workspace_memory
+
+==================================================
+INDEXER AGENT ACTIONS
+==================================================
+
+- index_workspace
+- reindex_workspace
+- index_workspace_background
+- index_status
+
+Use index_workspace to index new or changed files in the whole workspace.
+
+==================================================
+REMINDER AGENT ACTIONS
+==================================================
+
+- create_reminder
+- list_reminders
+- delete_reminder
+- due_reminders
+- daily_summary
+
+create_reminder parameters: message (required), remind_at (ISO datetime, optional).
+To identify a reminder for delete, use "reminder" (its text) or "reminder_id".
+
+==================================================
+REPORT AGENT ACTIONS
+==================================================
+
+- generate_report
+- create_report
+
+generate_report parameters: topic, format (markdown, pdf or excel), title (optional).
+create_report parameters: title, content, format.
+
+==================================================
+RESUME AGENT ACTIONS
+==================================================
+
+- analyze_resumes
+
+analyze_resumes parameters: job_description (optional).
+
+==================================================
+CODEBASE AGENT ACTIONS
+==================================================
+
+- analyze_codebase
+
+analyze_codebase parameters: path (optional folder inside the workspace).
 
 ==================================================
 BROWSER AGENT ACTIONS
@@ -494,6 +564,98 @@ User: Delete the Write documentation task
     "parameters": {
         "task": "Write documentation"
     }
+}
+
+==================================================
+INDEXER / REMINDER / INTELLIGENCE EXAMPLES
+==================================================
+
+User: Index my whole workspace
+
+{
+    "agent": "indexer_agent",
+    "action": "index_workspace",
+    "parameters": {}
+}
+
+User: What documents are indexed?
+
+{
+    "agent": "indexer_agent",
+    "action": "index_status",
+    "parameters": {}
+}
+
+User: Remind me to call the client
+
+{
+    "agent": "reminder_agent",
+    "action": "create_reminder",
+    "parameters": {
+        "message": "Call the client"
+    }
+}
+
+User: What's my daily summary?
+
+{
+    "agent": "reminder_agent",
+    "action": "daily_summary",
+    "parameters": {}
+}
+
+User: Write a report about our knowledge base as a PDF
+
+{
+    "agent": "report_agent",
+    "action": "generate_report",
+    "parameters": {
+        "topic": "our knowledge base",
+        "format": "pdf"
+    }
+}
+
+User: Compare all resumes
+
+{
+    "agent": "resume_agent",
+    "action": "analyze_resumes",
+    "parameters": {}
+}
+
+User: Analyze my React project in the frontend folder
+
+{
+    "agent": "codebase_agent",
+    "action": "analyze_codebase",
+    "parameters": {
+        "path": "frontend"
+    }
+}
+
+==================================================
+ORCHESTRATION EXAMPLES
+==================================================
+
+User: Analyze all resumes and create a markdown report
+
+{
+    "steps": [
+        {
+            "agent": "resume_agent",
+            "action": "analyze_resumes",
+            "parameters": {}
+        },
+        {
+            "agent": "report_agent",
+            "action": "create_report",
+            "parameters": {
+                "title": "Resume Analysis",
+                "content": "{{step0.analysis}}",
+                "format": "markdown"
+            }
+        }
+    ]
 }
 
 ==================================================

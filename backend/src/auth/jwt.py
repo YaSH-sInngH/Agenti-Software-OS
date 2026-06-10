@@ -2,7 +2,7 @@ from datetime import datetime
 from datetime import timedelta
 from jose import jwt, JWTError
 
-from src.config.settings import settings
+from src.core.config.settings import settings
 
 
 def create_access_token(data: dict):

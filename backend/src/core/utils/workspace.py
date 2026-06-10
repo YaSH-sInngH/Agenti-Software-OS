@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.config.settings import settings
+from src.core.config.settings import settings
 
 def get_workspace_path() -> Path:
     return Path(settings.WORKSPACE_DIR).resolve()

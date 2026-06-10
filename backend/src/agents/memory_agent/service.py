@@ -1,4 +1,4 @@
-from src.vectorstore.memory_store import store_memory, retrieve_memory
+from src.core.vectorstore.memory_store import store_memory, retrieve_memory
 
 class MemoryService:
 

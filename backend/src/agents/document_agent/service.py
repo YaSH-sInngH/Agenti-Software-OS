@@ -1,6 +1,6 @@
 from src.agents.document_agent.tools import read_document
-from src.llm.claude import llm
-from src.utils.workspace import resolve_workspace_file
+from src.core.llm.claude import llm
+from src.core.utils.workspace import resolve_workspace_file
 
 class DocumentService:
 

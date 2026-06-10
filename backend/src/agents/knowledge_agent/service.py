@@ -4,12 +4,12 @@ from src.agents.document_agent.tools import read_document
 from src.agents.knowledge_agent.chunker import chunk_text
 from src.agents.knowledge_agent.retriever import retrieve_chunks
 
-from src.vectorstore.embeddings import generate_embedding
-from src.vectorstore.pinecone_client import index
+from src.core.vectorstore.embeddings import generate_embedding
+from src.core.vectorstore.pinecone_client import index
 
-from src.utils.workspace import resolve_workspace_file
+from src.core.utils.workspace import resolve_workspace_file
 
-from src.llm.claude import llm
+from src.core.llm.claude import llm
 
 class KnowledgeService:
     @staticmethod
