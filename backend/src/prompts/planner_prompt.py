@@ -27,11 +27,26 @@ AVAILABLE AGENTS
 
 JSON SCHEMA
 
+For a request that needs ONE action, return a single object:
+
 {
     "agent": "",
     "action": "",
     "parameters": {}
 }
+
+For a request that needs MORE THAN ONE action, return a steps array.
+The steps run in order, one after another:
+
+{
+    "steps": [
+        { "agent": "", "action": "", "parameters": {} },
+        { "agent": "", "action": "", "parameters": {} }
+    ]
+}
+
+Only use steps when the request clearly requires multiple actions.
+Use a single object for a single action.
 
 ==================================================
 FILE AGENT ACTIONS
@@ -479,6 +494,67 @@ User: Delete the Write documentation task
     "parameters": {
         "task": "Write documentation"
     }
+}
+
+==================================================
+MULTI-STEP EXAMPLES
+==================================================
+
+User: Create a folder Reports and then list files
+
+{
+    "steps": [
+        {
+            "agent": "file_agent",
+            "action": "create_folder",
+            "parameters": { "folder_name": "Reports" }
+        },
+        {
+            "agent": "file_agent",
+            "action": "list_files",
+            "parameters": {}
+        }
+    ]
+}
+
+User: Index resume.pdf and remember that I uploaded my resume
+
+{
+    "steps": [
+        {
+            "agent": "knowledge_agent",
+            "action": "index_document",
+            "parameters": { "file_path": "resume.pdf" }
+        },
+        {
+            "agent": "memory_agent",
+            "action": "store_memory",
+            "parameters": {
+                "memory": "I uploaded my resume",
+                "memory_type": "workspace_memory"
+            }
+        }
+    ]
+}
+
+User: Summarize resume.pdf and create a task to review it tomorrow
+
+{
+    "steps": [
+        {
+            "agent": "document_agent",
+            "action": "summarize_document",
+            "parameters": { "file_path": "resume.pdf" }
+        },
+        {
+            "agent": "task_agent",
+            "action": "create_task",
+            "parameters": {
+                "title": "Review resume.pdf",
+                "due_date": "2026-06-11"
+            }
+        }
+    ]
 }
 
 ==================================================

@@ -11,11 +11,11 @@ class ResponseService:
     @staticmethod
     def generate(
         message: str,
-        result: dict
+        results
     ):
 
         raw = json.dumps(
-            result,
+            results,
             indent=2,
             default=str
         )
@@ -27,7 +27,7 @@ User Request:
 
 {message}
 
-Agent Result:
+Agent Results:
 
 {raw}
 """
