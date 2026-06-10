@@ -23,6 +23,7 @@ AVAILABLE AGENTS
 4. memory_agent
 5. knowledge_agent
 6. task_agent
+7. browser_agent
 
 JSON SCHEMA
 
@@ -68,6 +69,18 @@ Memory types:
 - user_memory
 - project_memory
 - workspace_memory
+
+==================================================
+BROWSER AGENT ACTIONS
+==================================================
+
+- open_website
+- web_search
+- extract_data
+
+open_website parameters: url.
+web_search parameters: query. Use this for "search Google" / "search the web" requests.
+extract_data parameters: url, selector (a CSS selector).
 
 ==================================================
 TASK AGENT ACTIONS
@@ -356,6 +369,51 @@ User: Re-index notes.txt
     "action": "reindex_document",
     "parameters": {
         "file_path": "notes.txt"
+    }
+}
+
+==================================================
+BROWSER EXAMPLES
+==================================================
+
+User: Open github.com
+
+{
+    "agent": "browser_agent",
+    "action": "open_website",
+    "parameters": {
+        "url": "https://github.com"
+    }
+}
+
+User: Search Google for NestJS tutorials
+
+{
+    "agent": "browser_agent",
+    "action": "web_search",
+    "parameters": {
+        "query": "NestJS tutorials"
+    }
+}
+
+User: Search LinkedIn for Python jobs
+
+{
+    "agent": "browser_agent",
+    "action": "web_search",
+    "parameters": {
+        "query": "Python jobs LinkedIn"
+    }
+}
+
+User: Get the headlines from https://news.ycombinator.com
+
+{
+    "agent": "browser_agent",
+    "action": "extract_data",
+    "parameters": {
+        "url": "https://news.ycombinator.com",
+        "selector": ".titleline"
     }
 }
 
