@@ -22,6 +22,7 @@ AVAILABLE AGENTS
 3. document_agent
 4. memory_agent
 5. knowledge_agent
+6. task_agent
 
 JSON SCHEMA
 
@@ -67,6 +68,20 @@ Memory types:
 - user_memory
 - project_memory
 - workspace_memory
+
+==================================================
+TASK AGENT ACTIONS
+==================================================
+
+- create_task
+- list_tasks
+- update_task
+- complete_task
+- delete_task
+
+create_task parameters: title (required), description, due_date (ISO YYYY-MM-DD).
+To identify an existing task for update/complete/delete, use "task" (the task title)
+or "task_id". Convert relative due dates into an ISO date using today's date.
 
 ==================================================
 KNOWLEDGE AGENT ACTIONS
@@ -341,6 +356,70 @@ User: Re-index notes.txt
     "action": "reindex_document",
     "parameters": {
         "file_path": "notes.txt"
+    }
+}
+
+==================================================
+TASK EXAMPLES
+==================================================
+
+User: Create task: Deploy Resume Matcher tomorrow
+
+{
+    "agent": "task_agent",
+    "action": "create_task",
+    "parameters": {
+        "title": "Deploy Resume Matcher",
+        "due_date": "2026-06-11"
+    }
+}
+
+User: Add a task to write documentation
+
+{
+    "agent": "task_agent",
+    "action": "create_task",
+    "parameters": {
+        "title": "Write documentation"
+    }
+}
+
+User: List my tasks
+
+{
+    "agent": "task_agent",
+    "action": "list_tasks",
+    "parameters": {}
+}
+
+User: Mark Deploy Resume Matcher as complete
+
+{
+    "agent": "task_agent",
+    "action": "complete_task",
+    "parameters": {
+        "task": "Deploy Resume Matcher"
+    }
+}
+
+User: Change the due date of Deploy Resume Matcher to next Friday
+
+{
+    "agent": "task_agent",
+    "action": "update_task",
+    "parameters": {
+        "task": "Deploy Resume Matcher",
+        "due_date": "2026-06-12"
+    }
+}
+
+User: Delete the Write documentation task
+
+{
+    "agent": "task_agent",
+    "action": "delete_task",
+    "parameters": {
+        "task": "Write documentation"
     }
 }
 

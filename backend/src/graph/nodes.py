@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import date
 from src.graph.state import AgentState
 from src.llm.claude import llm
 from src.agents.file_agent.executor import file_agent_executor
@@ -11,6 +12,9 @@ def planner_node(state: AgentState) -> AgentState:
 
     prompt = f"""
 {PLANNER_PROMPT}
+
+Today's date is {date.today().isoformat()}.
+Use it to resolve relative dates like "tomorrow" or "next Friday" into an ISO date (YYYY-MM-DD).
 
 User Request:
 
@@ -66,7 +70,7 @@ def router_nodes(state: AgentState):
         }
         state["response"] = "Unknown agent"
         return state
-    if agent_name in ("memory_agent", "knowledge_agent"):
+    if agent_name in ("memory_agent", "knowledge_agent", "task_agent"):
         result = executor(plan, state["user_id"])
     else:
         result = executor(plan)
