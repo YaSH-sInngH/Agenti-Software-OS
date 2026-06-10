@@ -74,6 +74,12 @@ KNOWLEDGE AGENT ACTIONS
 
 - index_document
 - ask_document
+- ask_workspace
+- delete_document
+- reindex_document
+
+Use ask_document when the question is about ONE specific file.
+Use ask_workspace when the question is about all indexed documents.
 
 ==================================================
 EXAMPLES
@@ -273,6 +279,46 @@ User: Summarize knowledge from resume.pdf
     "parameters": {
         "file_path": "resume.pdf",
         "question": "Summarize knowledge from resume.pdf"
+    }
+}
+
+User: Which of my documents mention Python?
+
+{
+    "agent": "knowledge_agent",
+    "action": "ask_workspace",
+    "parameters": {
+        "question": "Which documents mention Python?"
+    }
+}
+
+User: What do my documents say about React?
+
+{
+    "agent": "knowledge_agent",
+    "action": "ask_workspace",
+    "parameters": {
+        "question": "What do my documents say about React?"
+    }
+}
+
+User: Remove resume.pdf from the knowledge index
+
+{
+    "agent": "knowledge_agent",
+    "action": "delete_document",
+    "parameters": {
+        "file_path": "resume.pdf"
+    }
+}
+
+User: Re-index notes.txt
+
+{
+    "agent": "knowledge_agent",
+    "action": "reindex_document",
+    "parameters": {
+        "file_path": "notes.txt"
     }
 }
 

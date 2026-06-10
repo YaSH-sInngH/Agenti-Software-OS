@@ -65,7 +65,7 @@ def router_nodes(state: AgentState):
         }
         state["response"] = "Unknown agent"
         return state
-    if agent_name == "memory_agent":
+    if agent_name in ("memory_agent", "knowledge_agent"):
         result = executor(plan, state["user_id"])
     else:
         result = executor(plan)

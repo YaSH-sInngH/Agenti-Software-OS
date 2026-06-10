@@ -34,7 +34,7 @@ def write_file(filename: str, content: str):
         encoding="utf-8"
     )
     return {
-        "success": False,
+        "success": True,
         "path": str(file_path)
     }
 

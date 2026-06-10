@@ -52,6 +52,7 @@ class KnowledgeService:
 
         return {
             "success": True,
+            "file_path": file_path,
             "chunks": len(chunks)
         }
 
@@ -64,7 +65,8 @@ class KnowledgeService:
 
         matches = retrieve_chunks(
             question,
-            user_id
+            user_id,
+            file_path=file_path
         )
 
         context = "\n\n".join(
@@ -75,7 +77,10 @@ class KnowledgeService:
         )
 
         prompt = f"""
-Answer using only the context.
+You are answering a question about the document "{file_path}".
+The context below contains excerpts taken directly from that document.
+Answer the question using only this context.
+If the context does not contain the answer, say you don't have that information.
 
 Context:
 
@@ -92,5 +97,91 @@ Question:
 
         return {
             "success": True,
+            "file_path": file_path,
             "answer": result.content
         }
+
+    @staticmethod
+    def ask_workspace(
+        question: str,
+        user_id: int
+    ):
+
+        matches = retrieve_chunks(
+            question,
+            user_id
+        )
+
+        context = "\n\n".join(
+            [
+                m.metadata["text"]
+                for m in matches
+            ]
+        )
+
+        sources = list(
+            {
+                m.metadata.get("file_path")
+                for m in matches
+            }
+        )
+
+        prompt = f"""
+You are answering a question using the user's indexed documents.
+The context below contains excerpts taken from those documents.
+Answer the question using only this context.
+If the context does not contain the answer, say you don't have that information.
+
+Context:
+
+{context}
+
+Question:
+
+{question}
+"""
+
+        result = llm.invoke(
+            prompt
+        )
+
+        return {
+            "success": True,
+            "answer": result.content,
+            "sources": sources
+        }
+
+    @staticmethod
+    def delete_document(
+        file_path: str,
+        user_id: int
+    ):
+
+        index.delete(
+            filter={
+                "file_path": file_path
+            },
+            namespace=f"user_{user_id}_knowledge"
+        )
+
+        return {
+            "success": True,
+            "file_path": file_path,
+            "message": "Document removed from knowledge index"
+        }
+
+    @staticmethod
+    def reindex_document(
+        file_path: str,
+        user_id: int
+    ):
+
+        KnowledgeService.delete_document(
+            file_path,
+            user_id
+        )
+
+        return KnowledgeService.index_document(
+            file_path,
+            user_id
+        )
