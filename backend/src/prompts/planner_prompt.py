@@ -188,6 +188,30 @@ User: What do you remember about my preferences?
 }
 
 ==================================================
+DOCUMENT EXAMPLES
+==================================================
+
+User: Read resume.pdf
+
+{
+    "agent": "document_agent",
+    "action": "read_document",
+    "parameters": {
+        "file_path": "resume.pdf"
+    }
+}
+
+User: Summarize resume.pdf
+
+{
+    "agent": "document_agent",
+    "action": "summarize_document",
+    "parameters": {
+        "file_path": "resume.pdf"
+    }
+}
+
+==================================================
 FALLBACK
 ==================================================
 

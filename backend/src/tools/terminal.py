@@ -32,7 +32,7 @@ def run_command(command: str):
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=settings.WORKSPACE_PATH
+            cwd=settings.WORKSPACE_DIR
         )
 
         return {

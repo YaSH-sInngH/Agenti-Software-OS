@@ -11,7 +11,7 @@ def store_memory(
     embedding = generate_embedding(memory)
     memory_id = str(uuid.uuid4())
     index.upsert(
-        vector=[
+        vectors=[
             {
                 "id": memory_id,
                 "values": embedding,
