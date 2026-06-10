@@ -9,7 +9,10 @@ def retrieve_chunks(
     top_k: int = 5
 ):
 
-    embedding = generate_embedding(query)
+    embedding = generate_embedding(
+        query,
+        input_type="search_query"
+    )
     query_params = {
         "vector": embedding,
         "top_k": top_k,

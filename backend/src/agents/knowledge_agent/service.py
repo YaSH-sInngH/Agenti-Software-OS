@@ -152,6 +152,51 @@ Question:
         }
 
     @staticmethod
+    def search_workspace(
+        query: str,
+        user_id: int,
+        top_k: int = 10
+    ):
+
+        matches = retrieve_chunks(
+            query,
+            user_id,
+            top_k=top_k
+        )
+
+        best_per_file = {}
+
+        for m in matches:
+
+            file_path = m.metadata.get("file_path")
+
+            snippet = (
+                m.metadata.get("text", "")[:200]
+            )
+
+            existing = best_per_file.get(file_path)
+
+            if not existing or m.score > existing["score"]:
+
+                best_per_file[file_path] = {
+                    "file_path": file_path,
+                    "score": m.score,
+                    "snippet": snippet
+                }
+
+        results = sorted(
+            best_per_file.values(),
+            key=lambda r: r["score"],
+            reverse=True
+        )
+
+        return {
+            "success": True,
+            "query": query,
+            "results": results
+        }
+
+    @staticmethod
     def delete_document(
         file_path: str,
         user_id: int

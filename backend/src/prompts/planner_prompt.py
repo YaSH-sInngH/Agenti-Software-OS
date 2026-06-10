@@ -75,11 +75,13 @@ KNOWLEDGE AGENT ACTIONS
 - index_document
 - ask_document
 - ask_workspace
+- search_workspace
 - delete_document
 - reindex_document
 
 Use ask_document when the question is about ONE specific file.
 Use ask_workspace when the question is about all indexed documents.
+Use search_workspace to FIND which documents match a topic (no answer, just matching files).
 
 ==================================================
 EXAMPLES
@@ -299,6 +301,26 @@ User: What do my documents say about React?
     "action": "ask_workspace",
     "parameters": {
         "question": "What do my documents say about React?"
+    }
+}
+
+User: Find documents about React
+
+{
+    "agent": "knowledge_agent",
+    "action": "search_workspace",
+    "parameters": {
+        "query": "React"
+    }
+}
+
+User: Find resumes mentioning Python
+
+{
+    "agent": "knowledge_agent",
+    "action": "search_workspace",
+    "parameters": {
+        "query": "resumes mentioning Python"
     }
 }
 

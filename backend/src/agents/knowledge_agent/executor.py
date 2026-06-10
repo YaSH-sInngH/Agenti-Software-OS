@@ -43,6 +43,16 @@ def knowledge_agent_executor(
             )
         )
 
+    if action == "search_workspace":
+
+        return (
+            KnowledgeService
+            .search_workspace(
+                params["query"],
+                user_id
+            )
+        )
+
     if action == "delete_document":
 
         return (
