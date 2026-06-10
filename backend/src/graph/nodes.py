@@ -4,6 +4,7 @@ from src.graph.state import AgentState
 from src.llm.claude import llm
 from src.agents.file_agent.executor import file_agent_executor
 from src.agents.registry import AGENT_REGISTRY
+from src.agents.response_agent.executor import response_agent_executor
 from src.prompts.planner_prompt import PLANNER_PROMPT
 
 def planner_node(state: AgentState) -> AgentState:
@@ -73,4 +74,13 @@ def router_nodes(state: AgentState):
     state["response"] = (
         f"Executed {agent_name}"
     )
+    return state
+
+def response_node(state: AgentState):
+
+    state["response"] = response_agent_executor(
+        state["message"],
+        state["result"]
+    )
+
     return state
