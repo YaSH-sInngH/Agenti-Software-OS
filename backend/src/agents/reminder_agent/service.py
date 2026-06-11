@@ -83,21 +83,50 @@ class ReminderService:
         finally:
             db.close()
 
+    SORT_COLUMNS = {
+        "remind_at": Reminder.remind_at,
+        "created_at": Reminder.created_at,
+        "status": Reminder.status,
+    }
+
     @staticmethod
-    def list(user_id: int, workspace_id: int):
+    def list(
+        user_id: int,
+        workspace_id: int,
+        status: str = None,
+        sort: str = "remind_at",
+        order: str = "asc",
+        limit: int = None,
+        offset: int = 0,
+    ):
 
         db = SessionLocal()
 
         try:
-            reminders = (
+            query = (
                 db.query(Reminder)
                 .filter(
                     Reminder.user_id == user_id,
                     Reminder.workspace_id == workspace_id,
                 )
-                .order_by(Reminder.remind_at.asc())
-                .all()
             )
+
+            if status:
+                query = query.filter(Reminder.status == status)
+
+            total = query.count()
+
+            column = ReminderService.SORT_COLUMNS.get(sort, Reminder.remind_at)
+            query = query.order_by(
+                column.desc() if order == "desc" else column.asc()
+            )
+
+            if offset:
+                query = query.offset(offset)
+            if limit is not None:
+                query = query.limit(limit)
+
+            reminders = query.all()
 
             return {
                 "success": True,
@@ -105,6 +134,9 @@ class ReminderService:
                     serialize_reminder(r)
                     for r in reminders
                 ],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
             }
         finally:
             db.close()

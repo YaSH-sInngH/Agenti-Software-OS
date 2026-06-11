@@ -111,6 +111,41 @@ def resolve_placeholders(value, results):
 
     return PLACEHOLDER.sub(replace, value)
 
+def execute_step(step, prior_results, context):
+    # Run a single step: resolve {{stepN}} placeholders against earlier
+    # results, dispatch to the agent executor, and return a result record.
+    # Shared by the batch router and the SSE streaming endpoint.
+    agent_name = step.get("agent")
+    executor = AGENT_REGISTRY.get(agent_name)
+
+    resolved_step = dict(step)
+    resolved_step["parameters"] = resolve_placeholders(
+        step.get("parameters", {}),
+        prior_results,
+    )
+
+    if not executor:
+        result = {
+            "success": False,
+            "message": f"Unknown agent: {agent_name}",
+        }
+    else:
+        try:
+            result = executor(resolved_step, context)
+        except Exception as e:
+            # A single agent failure becomes a failed step, not a crashed run.
+            result = {
+                "success": False,
+                "message": f"{type(e).__name__}: {e}",
+            }
+
+    return {
+        "agent": agent_name,
+        "action": step.get("action"),
+        "result": result,
+    }
+
+
 def router_nodes(state: AgentState):
 
     steps = state.get("steps", [])
@@ -123,35 +158,7 @@ def router_nodes(state: AgentState):
     results = []
 
     for step in steps:
-
-        agent_name = step.get("agent")
-        executor = AGENT_REGISTRY.get(agent_name)
-
-        # Feed earlier step outputs into this step's parameters.
-        resolved_step = dict(step)
-        resolved_step["parameters"] = resolve_placeholders(
-            step.get("parameters", {}),
-            results,
-        )
-
-        if not executor:
-            results.append({
-                "agent": agent_name,
-                "action": step.get("action"),
-                "result": {
-                    "success": False,
-                    "message": f"Unknown agent: {agent_name}"
-                }
-            })
-            continue
-
-        result = executor(resolved_step, context)
-
-        results.append({
-            "agent": agent_name,
-            "action": step.get("action"),
-            "result": result
-        })
+        results.append(execute_step(step, results, context))
 
     state["results"] = results
 

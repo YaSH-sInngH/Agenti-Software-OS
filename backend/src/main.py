@@ -18,6 +18,12 @@ from src.api.user.routes import router as user_router
 from src.api.workspaces.routes import router as workspaces_router
 from src.api.orchestration.routes import router as orchestration_router
 from src.api.agents.routes import router as agents_router
+from src.api.tasks.routes import router as tasks_router
+from src.api.reminders.routes import router as reminders_router
+from src.api.knowledge.routes import router as knowledge_router
+from src.api.dashboard.routes import router as dashboard_router
+from src.api.runs.routes import router as runs_router
+from src.api.memories.routes import router as memories_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -59,3 +65,9 @@ app.include_router(user_router)
 app.include_router(workspaces_router)
 app.include_router(orchestration_router)
 app.include_router(agents_router)
+app.include_router(tasks_router)
+app.include_router(reminders_router)
+app.include_router(knowledge_router)
+app.include_router(dashboard_router)
+app.include_router(runs_router)
+app.include_router(memories_router)

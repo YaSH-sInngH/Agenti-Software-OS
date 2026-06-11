@@ -51,10 +51,16 @@ def run_agent(
         workspace_id=workspace_id,
     )
 
-    result = executor(
-        {"action": payload.action, "parameters": payload.parameters},
-        context,
-    )
+    try:
+        result = executor(
+            {"action": payload.action, "parameters": payload.parameters},
+            context,
+        )
+    except Exception as e:
+        result = {
+            "success": False,
+            "message": f"{type(e).__name__}: {e}",
+        }
 
     return ok({
         "agent": name,

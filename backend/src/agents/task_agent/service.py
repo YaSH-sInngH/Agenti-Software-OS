@@ -91,21 +91,51 @@ class TaskService:
         finally:
             db.close()
 
+    SORT_COLUMNS = {
+        "created_at": Task.created_at,
+        "due_date": Task.due_date,
+        "title": Task.title,
+        "status": Task.status,
+    }
+
     @staticmethod
-    def list(user_id: int, workspace_id: int):
+    def list(
+        user_id: int,
+        workspace_id: int,
+        status: str = None,
+        sort: str = "created_at",
+        order: str = "desc",
+        limit: int = None,
+        offset: int = 0,
+    ):
 
         db = SessionLocal()
 
         try:
-            tasks = (
+            query = (
                 db.query(Task)
                 .filter(
                     Task.user_id == user_id,
                     Task.workspace_id == workspace_id,
                 )
-                .order_by(Task.created_at.desc())
-                .all()
             )
+
+            if status:
+                query = query.filter(Task.status == status)
+
+            total = query.count()
+
+            column = TaskService.SORT_COLUMNS.get(sort, Task.created_at)
+            query = query.order_by(
+                column.desc() if order == "desc" else column.asc()
+            )
+
+            if offset:
+                query = query.offset(offset)
+            if limit is not None:
+                query = query.limit(limit)
+
+            tasks = query.all()
 
             return {
                 "success": True,
@@ -113,6 +143,9 @@ class TaskService:
                     serialize_task(t)
                     for t in tasks
                 ],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
             }
         finally:
             db.close()

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
 from datetime import datetime
 from src.core.db.database import Base
 
@@ -115,6 +115,31 @@ class Memory(Base):
     vector_id = Column(String, nullable=True, index=True)
     text = Column(String, nullable=False)
     type = Column(String, nullable=False, default="user_memory")
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+class Run(Base):
+    __tablename__ = "runs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id"),
+        nullable=False,
+        index=True,
+    )
+    message = Column(Text, nullable=True)
+    plan = Column(JSON, nullable=True)
+    results = Column(JSON, nullable=True)
+    response = Column(Text, nullable=True)
+    status = Column(String, nullable=False, default="completed")
     created_at = Column(
         DateTime,
         default=datetime.utcnow,

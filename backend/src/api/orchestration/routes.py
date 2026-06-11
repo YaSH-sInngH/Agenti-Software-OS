@@ -5,6 +5,7 @@ from src.core.db.database import get_db
 from src.auth.dependencies import get_current_user
 from src.workspaces.resolver import resolve_workspace_id
 from src.graph.nodes import planner_node, router_nodes, response_node
+from src.runs.service import RunService
 from src.core.schemas.orchestration import PlanRequest, RunRequest
 from src.core.utils.responses import ok
 
@@ -68,8 +69,18 @@ def run(
     state = router_nodes(state)
     state = response_node(state)
 
+    run = RunService.create(
+        current_user.id,
+        workspace_id,
+        payload.message or "",
+        payload.steps,
+        state["results"],
+        state["response"],
+    )
+
     return ok({
         "workspace_id": workspace_id,
+        "run_id": run["id"],
         "results": state["results"],
         "response": state["response"],
     })

@@ -38,6 +38,44 @@ def file_hash(path):
 class WorkspaceIndexerService:
 
     @staticmethod
+    def record_file(user_id: int, workspace_id: int, rel_path: str):
+        # Idempotently record/update an IndexedFile row so /knowledge/status
+        # reflects documents indexed directly (not just via index_workspace).
+        abs_path = get_workspace_path(workspace_id) / rel_path
+        if not abs_path.is_file():
+            return
+
+        digest = file_hash(abs_path)
+
+        db = SessionLocal()
+        try:
+            record = (
+                db.query(IndexedFile)
+                .filter(
+                    IndexedFile.user_id == user_id,
+                    IndexedFile.workspace_id == workspace_id,
+                    IndexedFile.file_path == rel_path,
+                )
+                .first()
+            )
+            if record:
+                record.file_hash = digest
+                record.indexed_at = datetime.utcnow()
+            else:
+                db.add(
+                    IndexedFile(
+                        user_id=user_id,
+                        workspace_id=workspace_id,
+                        file_path=rel_path,
+                        file_hash=digest,
+                        indexed_at=datetime.utcnow(),
+                    )
+                )
+            db.commit()
+        finally:
+            db.close()
+
+    @staticmethod
     def index_workspace(user_id: int, workspace_id: int, force: bool = False):
 
         workspace = get_workspace_path(workspace_id)

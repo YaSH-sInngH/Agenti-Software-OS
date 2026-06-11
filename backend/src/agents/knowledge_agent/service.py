@@ -4,7 +4,7 @@ from src.agents.document_agent.tools import read_document
 from src.agents.knowledge_agent.chunker import chunk_text
 from src.agents.knowledge_agent.retriever import retrieve_chunks
 
-from src.core.vectorstore.embeddings import generate_embedding
+from src.core.vectorstore.embeddings import generate_embeddings
 from src.core.vectorstore.pinecone_client import index
 from src.core.vectorstore.namespaces import knowledge_namespace
 
@@ -28,29 +28,28 @@ class KnowledgeService:
 
         chunks = chunk_text(text)
 
-        vectors = []
+        # Batch-embed all chunks (few calls), then build vectors.
+        embeddings = generate_embeddings(chunks)
 
-        for chunk in chunks:
+        vectors = [
+            {
+                "id": str(uuid.uuid4()),
+                "values": embedding,
+                "metadata": {
+                    "text": chunk,
+                    "file_path": file_path,
+                },
+            }
+            for chunk, embedding in zip(chunks, embeddings)
+        ]
 
-            embedding = (
-                generate_embedding(chunk)
+        # Upsert in batches to stay under Pinecone request-size limits.
+        namespace = knowledge_namespace(workspace_id)
+        for start in range(0, len(vectors), 100):
+            index.upsert(
+                vectors=vectors[start:start + 100],
+                namespace=namespace,
             )
-
-            vectors.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "values": embedding,
-                    "metadata": {
-                        "text": chunk,
-                        "file_path": file_path
-                    }
-                }
-            )
-
-        index.upsert(
-            vectors=vectors,
-            namespace=knowledge_namespace(workspace_id)
-        )
 
         return {
             "success": True,
