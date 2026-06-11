@@ -2,7 +2,8 @@ from src.agents.browser_agent.service import BrowserService
 
 
 def browser_agent_executor(
-    plan: dict
+    plan: dict,
+    context,
 ):
 
     action = plan.get("action")

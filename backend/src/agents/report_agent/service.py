@@ -50,9 +50,9 @@ def write_excel(path, content):
 class ReportService:
 
     @staticmethod
-    def create(title: str, content: str, fmt: str = "markdown"):
+    def create(workspace_id: int, title: str, content: str, fmt: str = "markdown"):
 
-        workspace = get_workspace_path()
+        workspace = get_workspace_path(workspace_id)
         name = safe_name(title)
         fmt = (fmt or "markdown").lower()
 
@@ -94,7 +94,7 @@ class ReportService:
         }
 
     @staticmethod
-    def generate(topic: str, fmt: str = "markdown", title: str = None):
+    def generate(workspace_id: int, topic: str, fmt: str = "markdown", title: str = None):
 
         title = title or topic
 
@@ -110,6 +110,7 @@ Topic:
         result = llm.invoke(prompt)
 
         return ReportService.create(
+            workspace_id,
             title,
             result.content,
             fmt,

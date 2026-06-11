@@ -1,8 +1,8 @@
 import subprocess
 from src.agents.terminal_agent.constants import ALLOWED_COMMANDS, BLOCKED_KEYWORDS
-from src.core.config.settings import settings
+from src.core.utils.workspace import get_workspace_path
 
-def run_command(command: str):
+def run_command(command: str, workspace_id: int):
     command_parts = command.strip().split()
     if not command_parts:
         return {
@@ -32,7 +32,7 @@ def run_command(command: str):
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=settings.WORKSPACE_DIR
+            cwd=str(get_workspace_path(workspace_id))
         )
 
         return {

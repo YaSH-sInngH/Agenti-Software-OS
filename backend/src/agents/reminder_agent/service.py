@@ -32,11 +32,14 @@ def serialize_reminder(reminder):
 class ReminderService:
 
     @staticmethod
-    def find_reminder(db, user_id, params):
+    def find_reminder(db, user_id, workspace_id, params):
 
         query = (
             db.query(Reminder)
-            .filter(Reminder.user_id == user_id)
+            .filter(
+                Reminder.user_id == user_id,
+                Reminder.workspace_id == workspace_id,
+            )
         )
 
         reminder_id = params.get("reminder_id")
@@ -56,13 +59,14 @@ class ReminderService:
         return None
 
     @staticmethod
-    def create(user_id: int, message: str, remind_at: str = None):
+    def create(user_id: int, workspace_id: int, message: str, remind_at: str = None):
 
         db = SessionLocal()
 
         try:
             reminder = Reminder(
                 user_id=user_id,
+                workspace_id=workspace_id,
                 message=message,
                 remind_at=parse_datetime(remind_at),
                 status="pending",
@@ -80,14 +84,17 @@ class ReminderService:
             db.close()
 
     @staticmethod
-    def list(user_id: int):
+    def list(user_id: int, workspace_id: int):
 
         db = SessionLocal()
 
         try:
             reminders = (
                 db.query(Reminder)
-                .filter(Reminder.user_id == user_id)
+                .filter(
+                    Reminder.user_id == user_id,
+                    Reminder.workspace_id == workspace_id,
+                )
                 .order_by(Reminder.remind_at.asc())
                 .all()
             )
@@ -103,13 +110,13 @@ class ReminderService:
             db.close()
 
     @staticmethod
-    def delete(user_id: int, params: dict):
+    def delete(user_id: int, workspace_id: int, params: dict):
 
         db = SessionLocal()
 
         try:
             reminder = ReminderService.find_reminder(
-                db, user_id, params
+                db, user_id, workspace_id, params
             )
 
             if not reminder:
@@ -131,7 +138,7 @@ class ReminderService:
             db.close()
 
     @staticmethod
-    def due(user_id: int):
+    def due(user_id: int, workspace_id: int):
 
         db = SessionLocal()
 
@@ -142,6 +149,7 @@ class ReminderService:
                 db.query(Reminder)
                 .filter(
                     Reminder.user_id == user_id,
+                    Reminder.workspace_id == workspace_id,
                     Reminder.status == "pending",
                     Reminder.remind_at.isnot(None),
                     Reminder.remind_at <= now,
@@ -160,7 +168,7 @@ class ReminderService:
             db.close()
 
     @staticmethod
-    def daily_summary(user_id: int):
+    def daily_summary(user_id: int, workspace_id: int):
 
         db = SessionLocal()
 
@@ -174,6 +182,7 @@ class ReminderService:
                 db.query(Task)
                 .filter(
                     Task.user_id == user_id,
+                    Task.workspace_id == workspace_id,
                     Task.status == "pending",
                 )
                 .all()
@@ -193,6 +202,7 @@ class ReminderService:
                 db.query(Reminder)
                 .filter(
                     Reminder.user_id == user_id,
+                    Reminder.workspace_id == workspace_id,
                     Reminder.status == "pending",
                 )
                 .all()

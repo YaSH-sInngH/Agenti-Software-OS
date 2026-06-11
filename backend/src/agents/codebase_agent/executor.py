@@ -2,7 +2,8 @@ from src.agents.codebase_agent.service import CodebaseService
 
 
 def codebase_agent_executor(
-    plan: dict
+    plan: dict,
+    context,
 ):
 
     action = plan.get("action")
@@ -11,7 +12,8 @@ def codebase_agent_executor(
 
     if action == "analyze_codebase":
         return CodebaseService.analyze(
-            params.get("path")
+            context.workspace_id,
+            params.get("path"),
         )
 
     return {

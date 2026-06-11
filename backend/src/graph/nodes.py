@@ -2,6 +2,7 @@ import json
 import re
 from datetime import date
 from src.graph.state import AgentState
+from src.graph.context import WorkspaceContext
 from src.core.llm.claude import llm
 from src.agents.file_agent.executor import file_agent_executor
 from src.agents.registry import AGENT_REGISTRY
@@ -61,14 +62,6 @@ User Request:
 
     return state
 
-USER_SCOPED_AGENTS = (
-    "memory_agent",
-    "knowledge_agent",
-    "task_agent",
-    "indexer_agent",
-    "reminder_agent",
-)
-
 PLACEHOLDER = re.compile(
     r"\{\{\s*step(\d+)(?:\.([\w\.]+))?\s*\}\}"
 )
@@ -121,7 +114,11 @@ def resolve_placeholders(value, results):
 def router_nodes(state: AgentState):
 
     steps = state.get("steps", [])
-    user_id = state["user_id"]
+
+    context = WorkspaceContext(
+        user_id=state["user_id"],
+        workspace_id=state["workspace_id"],
+    )
 
     results = []
 
@@ -148,10 +145,7 @@ def router_nodes(state: AgentState):
             })
             continue
 
-        if agent_name in USER_SCOPED_AGENTS:
-            result = executor(resolved_step, user_id)
-        else:
-            result = executor(resolved_step)
+        result = executor(resolved_step, context)
 
         results.append({
             "agent": agent_name,

@@ -6,9 +6,9 @@ from src.core.llm.claude import llm
 SUPPORTED = {".txt", ".pdf", ".docx"}
 
 
-def find_resumes():
+def find_resumes(workspace_id: int):
 
-    workspace = get_workspace_path()
+    workspace = get_workspace_path(workspace_id)
 
     resumes = []
     documents = []
@@ -27,10 +27,10 @@ def find_resumes():
 class ResumeService:
 
     @staticmethod
-    def analyze(job_description: str = None):
+    def analyze(workspace_id: int, job_description: str = None):
 
-        workspace = get_workspace_path()
-        files = find_resumes()
+        workspace = get_workspace_path(workspace_id)
+        files = find_resumes(workspace_id)
 
         if not files:
             return {

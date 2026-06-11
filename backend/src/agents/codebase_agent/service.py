@@ -29,16 +29,16 @@ MANIFESTS = {
 MAX_FILES = 300
 
 
-def resolve_dir(path_param):
+def resolve_dir(workspace_id, path_param):
 
-    workspace = get_workspace_path()
+    workspace = get_workspace_path(workspace_id)
 
     if not path_param:
         return workspace
 
     target = (workspace / path_param).resolve()
 
-    if not str(target).startswith(str(workspace)):
+    if target != workspace and workspace not in target.parents:
         raise Exception("Invalid workspace path")
 
     return target
@@ -76,10 +76,10 @@ def walk_codebase(root):
 class CodebaseService:
 
     @staticmethod
-    def analyze(path: str = None):
+    def analyze(workspace_id: int, path: str = None):
 
         try:
-            root = resolve_dir(path)
+            root = resolve_dir(workspace_id, path)
         except Exception as e:
             return {"success": False, "message": str(e)}
 

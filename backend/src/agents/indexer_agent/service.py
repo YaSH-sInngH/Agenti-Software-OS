@@ -11,9 +11,9 @@ from src.agents.knowledge_agent.service import KnowledgeService
 SUPPORTED = {".txt", ".pdf", ".docx"}
 
 
-def list_supported_files():
+def list_supported_files(workspace_id: int):
 
-    workspace = get_workspace_path()
+    workspace = get_workspace_path(workspace_id)
 
     files = []
 
@@ -38,10 +38,10 @@ def file_hash(path):
 class WorkspaceIndexerService:
 
     @staticmethod
-    def index_workspace(user_id: int, force: bool = False):
+    def index_workspace(user_id: int, workspace_id: int, force: bool = False):
 
-        workspace = get_workspace_path()
-        files = list_supported_files()
+        workspace = get_workspace_path(workspace_id)
+        files = list_supported_files(workspace_id)
 
         db = SessionLocal()
 
@@ -57,6 +57,7 @@ class WorkspaceIndexerService:
                     db.query(IndexedFile)
                     .filter(
                         IndexedFile.user_id == user_id,
+                        IndexedFile.workspace_id == workspace_id,
                         IndexedFile.file_path == rel,
                     )
                     .first()
@@ -67,14 +68,15 @@ class WorkspaceIndexerService:
                     continue
 
                 if record:
-                    KnowledgeService.reindex_document(rel, user_id)
+                    KnowledgeService.reindex_document(rel, workspace_id)
                     record.file_hash = digest
                     record.indexed_at = datetime.utcnow()
                 else:
-                    KnowledgeService.index_document(rel, user_id)
+                    KnowledgeService.index_document(rel, workspace_id)
                     db.add(
                         IndexedFile(
                             user_id=user_id,
+                            workspace_id=workspace_id,
                             file_path=rel,
                             file_hash=digest,
                             indexed_at=datetime.utcnow(),
@@ -95,18 +97,19 @@ class WorkspaceIndexerService:
             db.close()
 
     @staticmethod
-    def reindex_workspace(user_id: int):
+    def reindex_workspace(user_id: int, workspace_id: int):
         return WorkspaceIndexerService.index_workspace(
             user_id,
+            workspace_id,
             force=True,
         )
 
     @staticmethod
-    def index_workspace_background(user_id: int):
+    def index_workspace_background(user_id: int, workspace_id: int):
 
         thread = threading.Thread(
             target=WorkspaceIndexerService.index_workspace,
-            args=(user_id,),
+            args=(user_id, workspace_id),
             daemon=True,
         )
         thread.start()
@@ -117,14 +120,17 @@ class WorkspaceIndexerService:
         }
 
     @staticmethod
-    def status(user_id: int):
+    def status(user_id: int, workspace_id: int):
 
         db = SessionLocal()
 
         try:
             records = (
                 db.query(IndexedFile)
-                .filter(IndexedFile.user_id == user_id)
+                .filter(
+                    IndexedFile.user_id == user_id,
+                    IndexedFile.workspace_id == workspace_id,
+                )
                 .all()
             )
 
