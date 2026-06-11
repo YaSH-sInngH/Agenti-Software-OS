@@ -33,11 +33,14 @@ def serialize_task(task):
 class TaskService:
 
     @staticmethod
-    def find_task(db, user_id, params):
+    def find_task(db, user_id, workspace_id, params):
 
         query = (
             db.query(Task)
-            .filter(Task.user_id == user_id)
+            .filter(
+                Task.user_id == user_id,
+                Task.workspace_id == workspace_id,
+            )
         )
 
         task_id = params.get("task_id")
@@ -59,6 +62,7 @@ class TaskService:
     @staticmethod
     def create(
         user_id: int,
+        workspace_id: int,
         title: str,
         description: str = None,
         due_date: str = None,
@@ -69,6 +73,7 @@ class TaskService:
         try:
             task = Task(
                 user_id=user_id,
+                workspace_id=workspace_id,
                 title=title,
                 description=description,
                 status="pending",
@@ -87,14 +92,17 @@ class TaskService:
             db.close()
 
     @staticmethod
-    def list(user_id: int):
+    def list(user_id: int, workspace_id: int):
 
         db = SessionLocal()
 
         try:
             tasks = (
                 db.query(Task)
-                .filter(Task.user_id == user_id)
+                .filter(
+                    Task.user_id == user_id,
+                    Task.workspace_id == workspace_id,
+                )
                 .order_by(Task.created_at.desc())
                 .all()
             )
@@ -110,13 +118,13 @@ class TaskService:
             db.close()
 
     @staticmethod
-    def update(user_id: int, params: dict):
+    def update(user_id: int, workspace_id: int, params: dict):
 
         db = SessionLocal()
 
         try:
             task = TaskService.find_task(
-                db, user_id, params
+                db, user_id, workspace_id, params
             )
 
             if not task:
@@ -150,13 +158,13 @@ class TaskService:
             db.close()
 
     @staticmethod
-    def complete(user_id: int, params: dict):
+    def complete(user_id: int, workspace_id: int, params: dict):
 
         db = SessionLocal()
 
         try:
             task = TaskService.find_task(
-                db, user_id, params
+                db, user_id, workspace_id, params
             )
 
             if not task:
@@ -178,13 +186,13 @@ class TaskService:
             db.close()
 
     @staticmethod
-    def delete(user_id: int, params: dict):
+    def delete(user_id: int, workspace_id: int, params: dict):
 
         db = SessionLocal()
 
         try:
             task = TaskService.find_task(
-                db, user_id, params
+                db, user_id, workspace_id, params
             )
 
             if not task:

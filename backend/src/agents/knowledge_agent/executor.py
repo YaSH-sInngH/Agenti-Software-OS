@@ -5,12 +5,14 @@ from src.agents.knowledge_agent.service import (
 
 def knowledge_agent_executor(
     plan,
-    user_id
+    context,
 ):
 
     action = plan["action"]
 
     params = plan["parameters"]
+
+    workspace_id = context.workspace_id
 
     if action == "index_document":
 
@@ -18,7 +20,7 @@ def knowledge_agent_executor(
             KnowledgeService
             .index_document(
                 params["file_path"],
-                user_id
+                workspace_id
             )
         )
 
@@ -29,7 +31,7 @@ def knowledge_agent_executor(
             .ask_document(
                 params["file_path"],
                 params["question"],
-                user_id
+                workspace_id
             )
         )
 
@@ -39,7 +41,7 @@ def knowledge_agent_executor(
             KnowledgeService
             .ask_workspace(
                 params["question"],
-                user_id
+                workspace_id
             )
         )
 
@@ -49,7 +51,7 @@ def knowledge_agent_executor(
             KnowledgeService
             .search_workspace(
                 params["query"],
-                user_id
+                workspace_id
             )
         )
 
@@ -59,7 +61,7 @@ def knowledge_agent_executor(
             KnowledgeService
             .delete_document(
                 params["file_path"],
-                user_id
+                workspace_id
             )
         )
 
@@ -69,7 +71,7 @@ def knowledge_agent_executor(
             KnowledgeService
             .reindex_document(
                 params["file_path"],
-                user_id
+                workspace_id
             )
         )
 

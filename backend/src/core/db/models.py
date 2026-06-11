@@ -13,12 +13,33 @@ class User(Base):
         default=datetime.utcnow,
     )
 
+class Workspace(Base):
+    __tablename__ = "workspaces"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    name = Column(String, nullable=False)
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
 class Task(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id"),
         nullable=False,
         index=True,
     )
@@ -40,6 +61,12 @@ class IndexedFile(Base):
         nullable=False,
         index=True,
     )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id"),
+        nullable=False,
+        index=True,
+    )
     file_path = Column(String, nullable=False)
     file_hash = Column(String, nullable=False)
     indexed_at = Column(
@@ -56,9 +83,38 @@ class Reminder(Base):
         nullable=False,
         index=True,
     )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id"),
+        nullable=False,
+        index=True,
+    )
     message = Column(String, nullable=False)
     remind_at = Column(DateTime, nullable=True)
     status = Column(String, nullable=False, default="pending")
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+class Memory(Base):
+    __tablename__ = "memories"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id"),
+        nullable=False,
+        index=True,
+    )
+    vector_id = Column(String, nullable=True, index=True)
+    text = Column(String, nullable=False)
+    type = Column(String, nullable=False, default="user_memory")
     created_at = Column(
         DateTime,
         default=datetime.utcnow,

@@ -1,10 +1,11 @@
 from src.core.vectorstore.embeddings import generate_embedding
 from src.core.vectorstore.pinecone_client import index
+from src.core.vectorstore.namespaces import knowledge_namespace
 
 
 def retrieve_chunks(
     query: str,
-    user_id: int,
+    workspace_id: int,
     file_path: str = None,
     top_k: int = 5
 ):
@@ -17,7 +18,7 @@ def retrieve_chunks(
         "vector": embedding,
         "top_k": top_k,
         "include_metadata": True,
-        "namespace": f"user_{user_id}_knowledge"
+        "namespace": knowledge_namespace(workspace_id)
     }
     if file_path:
         query_params["filter"] = {

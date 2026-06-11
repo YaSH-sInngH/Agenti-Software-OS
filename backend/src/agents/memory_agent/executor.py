@@ -3,7 +3,7 @@ from src.agents.memory_agent.service import MemoryService
 
 def memory_agent_executor(
     plan: dict,
-    user_id: int
+    context,
 ):
 
     action = plan.get(
@@ -24,10 +24,9 @@ def memory_agent_executor(
             }
 
         return MemoryService.store(
-            user_id=user_id,
-            memory=parameters.get(
-                "memory"
-            ),
+            user_id=context.user_id,
+            workspace_id=context.workspace_id,
+            memory=memory,
             memory_type=parameters.get(
                 "memory_type",
                 "user_memory"
@@ -37,7 +36,8 @@ def memory_agent_executor(
     elif action == "retrieve_memory":
 
         return MemoryService.retrieve(
-            user_id=user_id,
+            user_id=context.user_id,
+            workspace_id=context.workspace_id,
             query=parameters.get(
                 "query"
             )

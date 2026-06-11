@@ -6,6 +6,7 @@ from src.agents.knowledge_agent.retriever import retrieve_chunks
 
 from src.core.vectorstore.embeddings import generate_embedding
 from src.core.vectorstore.pinecone_client import index
+from src.core.vectorstore.namespaces import knowledge_namespace
 
 from src.core.utils.workspace import resolve_workspace_file
 
@@ -15,10 +16,11 @@ class KnowledgeService:
     @staticmethod
     def index_document(
         file_path: str,
-        user_id: int
+        workspace_id: int
     ):
 
         path = resolve_workspace_file(
+            workspace_id,
             file_path
         )
 
@@ -47,7 +49,7 @@ class KnowledgeService:
 
         index.upsert(
             vectors=vectors,
-            namespace=f"user_{user_id}_knowledge"
+            namespace=knowledge_namespace(workspace_id)
         )
 
         return {
@@ -60,12 +62,12 @@ class KnowledgeService:
     def ask_document(
         file_path: str,
         question: str,
-        user_id: int
+        workspace_id: int
     ):
 
         matches = retrieve_chunks(
             question,
-            user_id,
+            workspace_id,
             file_path=file_path
         )
 
@@ -104,12 +106,12 @@ Question:
     @staticmethod
     def ask_workspace(
         question: str,
-        user_id: int
+        workspace_id: int
     ):
 
         matches = retrieve_chunks(
             question,
-            user_id
+            workspace_id
         )
 
         context = "\n\n".join(
@@ -154,13 +156,13 @@ Question:
     @staticmethod
     def search_workspace(
         query: str,
-        user_id: int,
+        workspace_id: int,
         top_k: int = 10
     ):
 
         matches = retrieve_chunks(
             query,
-            user_id,
+            workspace_id,
             top_k=top_k
         )
 
@@ -199,14 +201,14 @@ Question:
     @staticmethod
     def delete_document(
         file_path: str,
-        user_id: int
+        workspace_id: int
     ):
 
         index.delete(
             filter={
                 "file_path": file_path
             },
-            namespace=f"user_{user_id}_knowledge"
+            namespace=knowledge_namespace(workspace_id)
         )
 
         return {
@@ -218,15 +220,15 @@ Question:
     @staticmethod
     def reindex_document(
         file_path: str,
-        user_id: int
+        workspace_id: int
     ):
 
         KnowledgeService.delete_document(
             file_path,
-            user_id
+            workspace_id
         )
 
         return KnowledgeService.index_document(
             file_path,
-            user_id
+            workspace_id
         )

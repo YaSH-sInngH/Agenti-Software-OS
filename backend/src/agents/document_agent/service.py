@@ -5,8 +5,8 @@ from src.core.utils.workspace import resolve_workspace_file
 class DocumentService:
 
     @staticmethod
-    def read(file_path: str):
-        resolved_path=(resolve_workspace_file(file_path))
+    def read(workspace_id: int, file_path: str):
+        resolved_path = resolve_workspace_file(workspace_id, file_path)
         content = read_document(resolved_path)
         return {
             "success": True,
@@ -14,8 +14,8 @@ class DocumentService:
         }
 
     @staticmethod
-    def summarize(file_path: str):
-        resolved_path=(resolve_workspace_file(file_path))
+    def summarize(workspace_id: int, file_path: str):
+        resolved_path = resolve_workspace_file(workspace_id, file_path)
         content = read_document(resolved_path)
         prompt = f"""
 Summarize this document.

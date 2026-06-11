@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.core.db.database import get_db
 
-from src.core.schemas.auth import SignupRequest, LoginRequest, AuthResponse
+from src.core.schemas.auth import SignupRequest, LoginRequest
 
 from src.auth.user_service import (
     get_user_by_email,
@@ -18,6 +18,10 @@ from src.auth.security import (
 from src.auth.jwt import create_access_token
 
 from src.auth.dependencies import get_current_user
+
+from src.workspaces.service import WorkspaceService
+
+from src.core.utils.responses import ok
 
 router = APIRouter(
     prefix="/api/auth",
@@ -50,15 +54,21 @@ def signup(
         ),
     )
 
-    return {
-        "message": "User created successfully",
-        "user_id": user.id,
-    }
+    # Every user starts with a default workspace.
+    WorkspaceService.create(
+        db,
+        user.id,
+        "Default Workspace",
+    )
 
-@router.post(
-    "/login",
-    response_model=AuthResponse,
-)
+    return ok(
+        {
+            "message": "User created successfully",
+            "user_id": user.id,
+        }
+    )
+
+@router.post("/login")
 def login(
     payload: LoginRequest,
     db: Session = Depends(get_db),
@@ -93,18 +103,22 @@ def login(
         }
     )
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return ok(
+        {
+            "access_token": token,
+            "token_type": "bearer",
+        }
+    )
 
 @router.get("/me")
 def me(
     current_user=Depends(get_current_user),
 ):
 
-    return {
-        "id": current_user.id,
-        "name": current_user.name,
-        "email": current_user.email,
-    }
+    return ok(
+        {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email,
+        }
+    )
