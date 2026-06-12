@@ -10,3 +10,19 @@ services:
     env_file:
       - ./backend/.env
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: software-os-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
