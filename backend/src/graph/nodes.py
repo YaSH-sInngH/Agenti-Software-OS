@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from datetime import date
 from src.graph.state import AgentState
@@ -8,6 +9,8 @@ from src.agents.file_agent.executor import file_agent_executor
 from src.agents.registry import AGENT_REGISTRY
 from src.agents.response_agent.executor import response_agent_executor
 from src.prompts.planner_prompt import PLANNER_PROMPT
+
+logger = logging.getLogger(__name__)
 
 def planner_node(state: AgentState) -> AgentState:
 
@@ -24,7 +27,7 @@ User Request:
 
     result = llm.invoke(prompt)
 
-    print("LLM Result:========", result.content)
+    logger.debug("Planner LLM result: %s", result.content)
 
     content = result.content
 
@@ -45,7 +48,7 @@ User Request:
 
     except Exception as e:
 
-        print("Planner Parse Error:", e)
+        logger.warning("Planner parse error: %s", e)
 
         plan = {
             "agent": "unknown",
