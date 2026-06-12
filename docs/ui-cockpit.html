@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace OS — Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg0: #0A0A0A;
+    --bg1: #111111;
+    --bg2: #1A1A1A;
+    --bg3: #222222;
+    --bg4: #2A2A2A;
+    --border: #2A2A2A;
+    --border-hover: #3A3A3A;
+    --text-primary: #F0F0F0;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+    --status-working: #2563EB;
+    --status-working-text: #60A5FA;
+    --status-working-bg: rgba(37,99,235,0.08);
+    --status-done: #16A34A;
+    --status-done-text: #4ADE80;
+    --status-error: #DC2626;
+    --status-error-text: #F87171;
+    --status-partial: #D97706;
+    --font: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg0);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Lucide icons: one stroke weight everywhere, inherit color */
+  .lucide { stroke-width: 1.75px; display: block; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    height: 40px;
+    background: var(--bg1);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .workspace-switcher {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+    min-width: 170px;
+  }
+  .workspace-switcher:hover { background: var(--bg2); border-color: var(--border); }
+  .ws-glyph { width: 18px; height: 18px; border-radius: 4px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); flex-shrink: 0; }
+  .ws-glyph .lucide { width: 11px; height: 11px; }
+  .ws-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+  .ws-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-done); flex-shrink: 0; margin-left: 2px; }
+  .ws-chevron { color: var(--text-muted); margin-left: auto; }
+  .ws-chevron .lucide { width: 12px; height: 12px; }
+
+  .topbar-divider { width: 1px; height: 18px; background: var(--border); margin: 0 8px; }
+
+  .global-search {
+    flex: 1;
+    max-width: 360px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0 10px;
+    height: 28px;
+    cursor: text;
+    transition: border-color 0.15s;
+  }
+  .global-search:hover { border-color: var(--border-hover); }
+  .global-search .lucide { width: 13px; height: 13px; color: var(--text-muted); flex-shrink: 0; }
+  .global-search span { font-size: 12px; color: var(--text-muted); flex: 1; }
+  .kbd { font-size: 10px; font-family: var(--mono); color: var(--text-muted); background: var(--bg3); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .active-count { font-size: 11px; color: var(--text-muted); font-family: var(--mono); display: flex; align-items: center; gap: 6px; }
+  .active-count .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--status-working); animation: pulse 1.4s ease-in-out infinite; }
+  .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+  .avatar:hover { border-color: var(--border-hover); }
+
+  /* ── MAIN ── */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── LEFT RAIL ── */
+  .rail {
+    width: 224px;
+    background: var(--bg1);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .rail-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 14px 14px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rail-count { font-family: var(--mono); font-weight: 400; letter-spacing: 0; }
+
+  .agent-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background 0.1s;
+  }
+  .agent-row:hover { background: var(--bg2); }
+  .agent-row.active { background: var(--bg2); border-left-color: var(--status-working); }
+
+  .agent-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+  }
+  .agent-icon .lucide { width: 14px; height: 14px; }
+  .agent-row:hover .agent-icon { color: var(--text-primary); }
+  .agent-row.active .agent-icon { background: var(--status-working-bg); border-color: rgba(37,99,235,0.3); color: var(--status-working-text); }
+
+  .agent-info { flex: 1; min-width: 0; }
+  .agent-name { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .agent-action-hint { font-size: 10px; color: var(--text-muted); margin-top: 1px; font-family: var(--mono); }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bg4); flex-shrink: 0; }
+  .status-dot.working { background: var(--status-working); animation: pulse 1.4s ease-in-out infinite; }
+  .status-dot.done { background: var(--status-done); }
+  .status-dot.error { background: var(--status-error); }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+
+  .scope-badge {
+    font-size: 9px;
+    font-family: var(--mono);
+    font-weight: 500;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--bg3);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    letter-spacing: 0.03em;
+  }
+  .scope-badge.web { color: #7DA0C4; }
+  .scope-badge.sys { color: #C4A77D; }
+
+  .rail-footer {
+    margin-top: auto;
+    padding: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rail-footer-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: background 0.1s, color 0.1s;
+  }
+  .rail-footer-btn:hover { background: var(--bg2); color: var(--text-primary); }
+  .rail-footer-btn .lucide { width: 14px; height: 14px; }
+
+  /* ── CENTER ── */
+  .center { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg0); }
+
+  .command-bar-wrap { padding: 14px 20px 12px; border-bottom: 1px solid var(--border); background: var(--bg1); }
+  .command-bar {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    background: var(--bg0);
+    border: 1px solid var(--border-hover);
+    border-radius: 7px;
+    padding: 0 13px;
+    height: 44px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .command-bar:focus-within { border-color: #444; box-shadow: 0 0 0 3px rgba(255,255,255,0.03); }
+  .command-glyph { width: 20px; height: 20px; border-radius: 4px; background: var(--bg2); display: flex; align-items: center; justify-content: center; color: var(--text-muted); flex-shrink: 0; }
+  .command-glyph .lucide { width: 12px; height: 12px; }
+  .command-bar input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: var(--font); font-size: 14px; color: var(--text-primary); caret-color: var(--text-secondary);
+  }
+  .command-bar input::placeholder { color: var(--text-muted); }
+
+  .center-content { flex: 1; overflow-y: auto; padding: 16px 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* Plan header */
+  .plan-header { display: flex; align-items: center; justify-content: space-between; }
+  .plan-title-group { display: flex; align-items: center; gap: 8px; }
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+  .plan-meta { font-size: 10px; color: var(--text-muted); font-family: var(--mono); }
+  .plan-actions { display: flex; gap: 6px; align-items: center; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 5px; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: background 0.1s, color 0.1s, border-color 0.1s;
+    font-family: var(--font); border: 1px solid transparent;
+  }
+  .btn .lucide { width: 12px; height: 12px; }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text-secondary); }
+  .btn-ghost:hover { background: var(--bg2); color: var(--text-primary); border-color: var(--border-hover); }
+  .btn-primary { background: var(--text-primary); color: var(--bg0); border-color: var(--text-primary); }
+  .btn-primary:hover { background: #fff; }
+  .btn-primary .kbd { background: rgba(0,0,0,0.12); border-color: rgba(0,0,0,0.15); color: rgba(0,0,0,0.55); }
+
+  /* Plan steps as pipeline nodes */
+  .plan-steps { display: flex; flex-direction: column; }
+  .step-chip {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px; background: var(--bg1);
+    border: 1px solid var(--border); border-left-width: 3px; border-left-color: var(--bg4);
+    border-radius: 6px; transition: border-color 0.12s;
+  }
+  .step-chip:hover { border-color: var(--border-hover); border-left-color: var(--bg4); }
+  .step-chip.working { border-left-color: var(--status-working); background: var(--status-working-bg); }
+  .step-chip.done { border-left-color: var(--status-done); }
+  .step-chip.done .step-agent-name, .step-chip.done .step-num { opacity: 0.75; }
+  .step-chip.error { border-left-color: var(--status-error); }
+
+  .step-num { font-size: 10px; font-family: var(--mono); color: var(--text-muted); width: 16px; flex-shrink: 0; }
+  .step-agent-icon { width: 24px; height: 24px; border-radius: 5px; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); flex-shrink: 0; }
+  .step-agent-icon .lucide { width: 13px; height: 13px; }
+  .step-chip.working .step-agent-icon { background: rgba(37,99,235,0.12); border-color: rgba(37,99,235,0.3); color: var(--status-working-text); }
+  .step-chip.done .step-agent-icon { color: var(--status-done-text); border-color: rgba(22,163,74,0.25); }
+
+  .step-body { flex: 1; min-width: 0; }
+  .step-agent-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+  .step-action { font-size: 11px; color: var(--text-secondary); margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .step-action code { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); background: var(--bg2); padding: 1px 6px; border-radius: 3px; }
+
+  .step-status-badge { font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 4px; font-weight: 500; flex-shrink: 0; }
+  .step-status-badge.working { background: rgba(37,99,235,0.12); color: var(--status-working-text); }
+  .step-status-badge.done { background: rgba(22,163,74,0.12); color: var(--status-done-text); }
+  .step-status-badge.pending { background: var(--bg2); color: var(--text-muted); }
+
+  .step-connector { display: flex; align-items: center; gap: 7px; padding: 2px 0 2px 27px; height: 22px; }
+  .connector-line { width: 1px; height: 100%; background: var(--border); }
+  .connector-label { font-size: 10px; color: var(--text-muted); font-family: var(--mono); display: flex; align-items: center; gap: 5px; }
+  .connector-label .lucide { width: 11px; height: 11px; color: var(--bg4); }
+
+  /* Final response */
+  .response-card { background: var(--bg1); border: 1px solid var(--border); border-radius: 7px; padding: 14px 16px; }
+  .response-header { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .response-header .lucide { width: 14px; height: 14px; color: var(--text-secondary); }
+  .response-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.02em; }
+  .response-time { font-size: 10px; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+  .response-text { font-size: 13px; color: var(--text-primary); line-height: 1.65; }
+  .response-text strong { font-weight: 600; }
+
+  /* Result cards */
+  .result-card { background: var(--bg1); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+  .result-card-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .result-card-header .lucide { width: 13px; height: 13px; color: var(--text-secondary); }
+  .result-card-agent { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+  .result-card-action { font-size: 10px; color: var(--text-muted); font-family: var(--mono); }
+  .result-tag { margin-left: auto; font-size: 10px; font-family: var(--mono); display: flex; align-items: center; gap: 5px; }
+  .result-tag.done { color: var(--status-done); }
+  .result-tag.working { color: var(--status-working-text); }
+  .result-tag .lucide { width: 11px; height: 11px; }
+  .result-card-body { padding: 12px; }
+
+  .summary-row { display: flex; gap: 16px; align-items: center; font-size: 11px; }
+  .summary-row .muted { color: var(--text-secondary); }
+  .summary-row strong { color: var(--text-primary); font-weight: 600; }
+  .summary-row .time { margin-left: auto; color: var(--status-done); font-family: var(--mono); font-size: 10px; }
+
+  /* Terminal */
+  .terminal-block { background: var(--bg0); border: 1px solid var(--border); border-radius: 5px; padding: 10px 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.7; }
+  .terminal-line { color: #D4D4D4; }
+  .terminal-line.dim { color: var(--text-muted); }
+  .terminal-success { color: var(--status-done-text); }
+  .terminal-exit { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text-muted); display: flex; gap: 12px; }
+  .exit-ok { color: var(--status-done); font-weight: 500; }
+
+  /* Knowledge */
+  .knowledge-results { display: flex; flex-direction: column; gap: 8px; }
+  .knowledge-item { padding: 10px 11px; background: var(--bg2); border-radius: 5px; border: 1px solid var(--border); }
+  .knowledge-item-title { font-size: 12px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .knowledge-item-title .lucide { width: 12px; height: 12px; color: var(--text-muted); }
+  .knowledge-item-snippet { font-size: 11px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 9px; }
+  .score-bar-wrap { display: flex; align-items: center; gap: 9px; }
+  .score-bar { flex: 1; height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+  .score-bar-fill { height: 100%; background: var(--status-working); border-radius: 2px; }
+  .score-label { font-size: 10px; font-family: var(--mono); color: var(--text-muted); width: 30px; text-align: right; }
+
+  /* Tasks */
+  .task-list { display: flex; flex-direction: column; gap: 5px; }
+  .task-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; background: var(--bg2); border-radius: 5px; }
+  .task-cb { width: 15px; height: 15px; border-radius: 4px; border: 1px solid var(--border-hover); background: var(--bg0); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: transparent; }
+  .task-cb .lucide { width: 10px; height: 10px; stroke-width: 3px; }
+  .task-cb.checked { background: var(--status-done); border-color: var(--status-done); color: #fff; }
+  .task-title { flex: 1; font-size: 12px; color: var(--text-primary); }
+  .task-title.done { text-decoration: line-through; color: var(--text-muted); }
+  .due-chip { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--bg3); color: var(--text-muted); border: 1px solid var(--border); font-family: var(--mono); }
+  .due-chip.overdue { background: rgba(220,38,38,0.08); color: var(--status-error-text); border-color: rgba(220,38,38,0.2); }
+
+  /* Shimmer (opacity pulse, not gradient) */
+  @keyframes opacityPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .skeleton { background: var(--bg3); border-radius: 3px; height: 9px; animation: opacityPulse 1.5s ease-in-out infinite; }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel { width: 264px; background: var(--bg1); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+  .right-section { padding: 14px; border-bottom: 1px solid var(--border); }
+  .right-section:last-child { border-bottom: none; }
+  .right-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+  .right-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .right-section-action { font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 3px; }
+  .right-section-action:hover { color: var(--text-secondary); }
+  .right-section-action .lucide { width: 11px; height: 11px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 11px; }
+  .stat-value { font-size: 20px; font-weight: 600; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 10px; color: var(--text-muted); margin-top: 5px; }
+
+  .run-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .run-item:last-child { border-bottom: none; }
+  .run-item:hover .run-msg { color: var(--text-primary); }
+  .run-status-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .run-status-dot.done { background: var(--status-done); }
+  .run-status-dot.error { background: var(--status-error); }
+  .run-status-dot.partial { background: var(--status-partial); }
+  .run-info { flex: 1; min-width: 0; }
+  .run-msg { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; transition: color 0.1s; }
+  .run-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: var(--mono); }
+
+  .file-tree { display: flex; flex-direction: column; gap: 1px; }
+  .file-row { display: flex; align-items: center; gap: 7px; padding: 4px 6px; cursor: pointer; border-radius: 4px; }
+  .file-row:hover { background: var(--bg2); }
+  .file-row:hover .file-name { color: var(--text-primary); }
+  .file-indent { width: 13px; flex-shrink: 0; }
+  .file-row .lucide { width: 13px; height: 13px; color: var(--text-muted); flex-shrink: 0; }
+  .file-name { font-size: 11px; color: var(--text-secondary); font-family: var(--mono); }
+  .file-size { font-size: 10px; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+
+  .upload-zone { margin-top: 8px; border: 1px dashed var(--border-hover); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .upload-zone:hover { border-color: #4a4a4a; background: var(--bg2); }
+  .upload-zone .lucide { width: 16px; height: 16px; color: var(--text-muted); }
+  .upload-zone span { font-size: 11px; color: var(--text-muted); }
+
+  /* Toasts */
+  .toast-stack { position: fixed; bottom: 18px; right: 18px; display: flex; flex-direction: column; gap: 6px; z-index: 100; }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 10px 13px; background: var(--bg2); border: 1px solid var(--border-hover); border-radius: 7px; font-size: 12px; color: var(--text-primary); box-shadow: 0 8px 28px rgba(0,0,0,0.55); min-width: 250px; }
+  .toast-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .toast-dot.done { background: var(--status-done); }
+  .toast-dot.working { background: var(--status-working); animation: pulse 1.4s ease-in-out infinite; }
+  .toast-msg { flex: 1; }
+  .toast-time { font-size: 10px; color: var(--text-muted); font-family: var(--mono); }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--bg4); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="workspace-switcher">
+    <div class="ws-glyph"><i data-lucide="layout-grid"></i></div>
+    <span class="ws-name">Resume Pipeline</span>
+    <span class="ws-chevron"><i data-lucide="chevron-down"></i></span>
+  </div>
+
+  <div class="topbar-divider"></div>
+
+  <div class="global-search">
+    <i data-lucide="search"></i>
+    <span>Search files, tasks, memories…</span>
+    <span class="kbd">⌘K</span>
+  </div>
+
+  <div class="topbar-right">
+    <div class="active-count"><span class="dot"></span>2 agents active</div>
+    <div class="topbar-divider"></div>
+    <div class="avatar">AK</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT RAIL -->
+  <div class="rail">
+    <div class="rail-section-label">Agents <span class="rail-count">12</span></div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="folder"></i></div>
+      <div class="agent-info"><div class="agent-name">File Agent</div><div class="agent-action-hint">write_file</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot done"></div>
+    </div>
+
+    <div class="agent-row active">
+      <div class="agent-icon"><i data-lucide="database"></i></div>
+      <div class="agent-info"><div class="agent-name">Indexer Agent</div><div class="agent-action-hint">index_workspace</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot done"></div>
+    </div>
+
+    <div class="agent-row active">
+      <div class="agent-icon"><i data-lucide="users"></i></div>
+      <div class="agent-info"><div class="agent-name">Resume Agent</div><div class="agent-action-hint">analyze_resumes</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot working"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="file-bar-chart"></i></div>
+      <div class="agent-info"><div class="agent-name">Report Agent</div><div class="agent-action-hint">create_report</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="brain"></i></div>
+      <div class="agent-info"><div class="agent-name">Memory Agent</div><div class="agent-action-hint">store_memory</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="book-open"></i></div>
+      <div class="agent-info"><div class="agent-name">Knowledge Agent</div><div class="agent-action-hint">search_workspace</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot done"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="square-check"></i></div>
+      <div class="agent-info"><div class="agent-name">Task Agent</div><div class="agent-action-hint">create_task</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="globe"></i></div>
+      <div class="agent-info"><div class="agent-name">Browser Agent</div><div class="agent-action-hint">web_search</div></div>
+      <span class="scope-badge web">WEB</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="terminal"></i></div>
+      <div class="agent-info"><div class="agent-name">Terminal Agent</div><div class="agent-action-hint">run_command</div></div>
+      <span class="scope-badge sys">SYS</span>
+      <div class="status-dot done"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="file-text"></i></div>
+      <div class="agent-info"><div class="agent-name">Document Agent</div><div class="agent-action-hint">summarize_document</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="bell"></i></div>
+      <div class="agent-info"><div class="agent-name">Reminder Agent</div><div class="agent-action-hint">daily_summary</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="agent-row">
+      <div class="agent-icon"><i data-lucide="code"></i></div>
+      <div class="agent-info"><div class="agent-name">Codebase Agent</div><div class="agent-action-hint">analyze_codebase</div></div>
+      <span class="scope-badge">WS</span>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="rail-footer">
+      <div class="rail-footer-btn"><i data-lucide="folder-tree"></i> Explorer</div>
+      <div class="rail-footer-btn"><i data-lucide="history"></i> Run History</div>
+      <div class="rail-footer-btn"><i data-lucide="settings"></i> Settings</div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+
+    <div class="command-bar-wrap">
+      <div class="command-bar">
+        <div class="command-glyph"><i data-lucide="folder"></i></div>
+        <input type="text" value="Analyze all resumes and write a markdown report" readonly>
+        <span class="kbd">⌘↵ to run</span>
+      </div>
+    </div>
+
+    <div class="center-content">
+
+      <div class="plan-header">
+        <div class="plan-title-group">
+          <span class="section-label">Execution plan</span>
+          <span class="plan-meta">3 steps · 1 running</span>
+        </div>
+        <div class="plan-actions">
+          <button class="btn btn-ghost"><i data-lucide="pencil"></i> Edit</button>
+          <button class="btn btn-primary">Approve <span class="kbd">⌘↵</span></button>
+        </div>
+      </div>
+
+      <div class="plan-steps">
+        <div class="step-chip done">
+          <span class="step-num">01</span>
+          <div class="step-agent-icon"><i data-lucide="database"></i></div>
+          <div class="step-body">
+            <div class="step-agent-name">Indexer Agent</div>
+            <div class="step-action">index_workspace <code>force: false</code></div>
+          </div>
+          <span class="step-status-badge done">done</span>
+        </div>
+
+        <div class="step-connector"><div class="connector-line"></div><span class="connector-label"><i data-lucide="corner-down-right"></i> uses step01.indexed_files</span></div>
+
+        <div class="step-chip working">
+          <span class="step-num">02</span>
+          <div class="step-agent-icon"><i data-lucide="users"></i></div>
+          <div class="step-body">
+            <div class="step-agent-name">Resume Agent</div>
+            <div class="step-action">analyze_resumes <code>job_description: "Senior FE"</code></div>
+          </div>
+          <span class="step-status-badge working">running…</span>
+        </div>
+
+        <div class="step-connector"><div class="connector-line"></div><span class="connector-label"><i data-lucide="corner-down-right"></i> uses step02.analysis</span></div>
+
+        <div class="step-chip">
+          <span class="step-num">03</span>
+          <div class="step-agent-icon"><i data-lucide="file-bar-chart"></i></div>
+          <div class="step-body">
+            <div class="step-agent-name">Report Agent</div>
+            <div class="step-action">create_report <code>format: "markdown"</code></div>
+          </div>
+          <span class="step-status-badge pending">queued</span>
+        </div>
+      </div>
+
+      <!-- Indexer result -->
+      <div class="result-card">
+        <div class="result-card-header">
+          <i data-lucide="database"></i>
+          <span class="result-card-agent">Indexer Agent</span>
+          <span class="result-card-action">· index_workspace</span>
+          <span class="result-tag done"><i data-lucide="check"></i> done</span>
+        </div>
+        <div class="result-card-body">
+          <div class="summary-row">
+            <span class="muted">Indexed <strong>24 files</strong></span>
+            <span class="muted">8 PDF · 12 DOCX · 4 TXT</span>
+            <span class="time">1.2s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Knowledge result -->
+      <div class="result-card">
+        <div class="result-card-header">
+          <i data-lucide="book-open"></i>
+          <span class="result-card-agent">Knowledge Agent</span>
+          <span class="result-card-action">· search_workspace</span>
+        </div>
+        <div class="result-card-body">
+          <div class="knowledge-results">
+            <div class="knowledge-item">
+              <div class="knowledge-item-title"><i data-lucide="file-text"></i> sarah_chen_resume.pdf</div>
+              <div class="knowledge-item-snippet">5 years React/TypeScript, led a frontend team of 4 at a Series B startup. Strong system-design background.</div>
+              <div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" style="width:92%"></div></div><span class="score-label">0.92</span></div>
+            </div>
+            <div class="knowledge-item">
+              <div class="knowledge-item-title"><i data-lucide="file-text"></i> marcus_obi_resume.pdf</div>
+              <div class="knowledge-item-snippet">Full-stack engineer, Node.js + Python. 3 yrs experience, open-source contributor with 2k+ GitHub stars.</div>
+              <div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" style="width:78%"></div></div><span class="score-label">0.78</span></div>
+            </div>
+            <div class="knowledge-item">
+              <div class="knowledge-item-title"><i data-lucide="file-text"></i> priya_mehta_resume.docx</div>
+              <div class="knowledge-item-snippet">Mobile-first developer, React Native specialist. Shipped 3 apps with 50k+ DAU.</div>
+              <div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" style="width:65%"></div></div><span class="score-label">0.65</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal result -->
+      <div class="result-card">
+        <div class="result-card-header">
+          <i data-lucide="terminal"></i>
+          <span class="result-card-agent">Terminal Agent</span>
+          <span class="result-card-action">· run_command</span>
+          <span class="result-tag done"><i data-lucide="check"></i> exit 0</span>
+        </div>
+        <div class="result-card-body">
+          <div class="terminal-block">
+            <div class="terminal-line">$ ls resumes/ | wc -l</div>
+            <div class="terminal-line dim">24</div>
+            <div class="terminal-line" style="margin-top:4px;">$ python3 scripts/validate_formats.py</div>
+            <div class="terminal-success">✓ all 24 files validated</div>
+            <div class="terminal-line dim">→ 8 pdf · 12 docx · 4 txt</div>
+            <div class="terminal-exit"><span class="exit-ok">exit 0</span><span>0.34s</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task result -->
+      <div class="result-card">
+        <div class="result-card-header">
+          <i data-lucide="square-check"></i>
+          <span class="result-card-agent">Task Agent</span>
+          <span class="result-card-action">· list_tasks</span>
+        </div>
+        <div class="result-card-body">
+          <div class="task-list">
+            <div class="task-item"><div class="task-cb checked"><i data-lucide="check"></i></div><span class="task-title done">Set up resume pipeline workspace</span><span class="due-chip">done</span></div>
+            <div class="task-item"><div class="task-cb checked"><i data-lucide="check"></i></div><span class="task-title done">Upload all candidate PDFs</span><span class="due-chip">done</span></div>
+            <div class="task-item"><div class="task-cb"></div><span class="task-title">Review shortlisted candidates</span><span class="due-chip overdue">Jun 10</span></div>
+            <div class="task-item"><div class="task-cb"></div><span class="task-title">Send interview invites</span><span class="due-chip">Jun 16</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending report (opacity pulse skeleton) -->
+      <div class="result-card" style="opacity:0.55;">
+        <div class="result-card-header">
+          <i data-lucide="file-bar-chart"></i>
+          <span class="result-card-agent">Report Agent</span>
+          <span class="result-card-action">· create_report</span>
+          <span class="result-tag working"><i data-lucide="loader"></i> waiting…</span>
+        </div>
+        <div class="result-card-body" style="display:flex;flex-direction:column;gap:9px;">
+          <div class="skeleton" style="width:62%"></div>
+          <div class="skeleton" style="width:88%"></div>
+          <div class="skeleton" style="width:43%"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="right-section">
+      <div class="right-section-header">
+        <span class="right-section-label">Workspace</span>
+        <span class="right-section-action">view all <i data-lucide="arrow-right"></i></span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-value">24</div><div class="stat-label">Files indexed</div></div>
+        <div class="stat-card"><div class="stat-value">4</div><div class="stat-label">Tasks open</div></div>
+        <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Runs total</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--status-working-text);">2</div><div class="stat-label">Active now</div></div>
+      </div>
+    </div>
+
+    <div class="right-section">
+      <div class="right-section-header">
+        <span class="right-section-label">Recent runs</span>
+        <span class="right-section-action">history <i data-lucide="arrow-right"></i></span>
+      </div>
+      <div>
+        <div class="run-item"><div class="run-status-dot done"></div><div class="run-info"><div class="run-msg">Summarize Q2 budget documents</div><div class="run-meta">4 steps · 1.4s · 2h ago</div></div></div>
+        <div class="run-item"><div class="run-status-dot partial"></div><div class="run-info"><div class="run-msg">Search TypeScript jobs and extract data</div><div class="run-meta">3 steps · partial · 5h ago</div></div></div>
+        <div class="run-item"><div class="run-status-dot done"></div><div class="run-info"><div class="run-msg">Daily briefing + reminder check</div><div class="run-meta">2 steps · 0.8s · 8h ago</div></div></div>
+        <div class="run-item"><div class="run-status-dot error"></div><div class="run-info"><div class="run-msg">Analyze codebase structure</div><div class="run-meta">1 step · error · yesterday</div></div></div>
+      </div>
+    </div>
+
+    <div class="right-section">
+      <div class="right-section-header">
+        <span class="right-section-label">Files</span>
+        <span class="right-section-action">explorer <i data-lucide="arrow-right"></i></span>
+      </div>
+      <div class="file-tree">
+        <div class="file-row"><i data-lucide="chevron-down"></i><i data-lucide="folder"></i><span class="file-name">resumes/</span></div>
+        <div class="file-row"><span class="file-indent"></span><i data-lucide="file-text"></i><span class="file-name">sarah_chen.pdf</span><span class="file-size">84k</span></div>
+        <div class="file-row"><span class="file-indent"></span><i data-lucide="file-text"></i><span class="file-name">marcus_obi.pdf</span><span class="file-size">61k</span></div>
+        <div class="file-row"><span class="file-indent"></span><i data-lucide="file-text"></i><span class="file-name">priya_mehta.docx</span><span class="file-size">42k</span></div>
+        <div class="file-row"><i data-lucide="chevron-right"></i><i data-lucide="folder"></i><span class="file-name">reports/</span></div>
+      </div>
+      <div class="upload-zone"><i data-lucide="upload"></i><span>Drop files or folders here</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOASTS -->
+<div class="toast-stack">
+  <div class="toast"><div class="toast-dot working"></div><span class="toast-msg">Resume Agent analyzing 24 files…</span><span class="toast-time">0:12</span></div>
+  <div class="toast"><div class="toast-dot done"></div><span class="toast-msg">Workspace indexed — 24 files ready</span><span class="toast-time">just now</span></div>
+</div>
+
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
